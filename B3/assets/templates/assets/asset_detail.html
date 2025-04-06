@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1>{{ asset.symbol }} - {{ asset.name }}</h1>
+    </div>
+    <div class="col text-end">
+        <a href="{% url 'admin:assets_asset_change' asset.pk %}" class="btn btn-primary">Editar</a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Histórico de Preços</h5>
+                <canvas id="priceChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Informações do Túnel</h5>
+                <p><strong>Limite Superior:</strong> R$ {{ asset.tunnel_upper_limit }}</p>
+                <p><strong>Limite Inferior:</strong> R$ {{ asset.tunnel_lower_limit }}</p>
+                <p><strong>Intervalo de Checagem:</strong> {{ asset.check_interval }} minutos</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Últimas Cotações</h5>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Data/Hora</th>
+                                <th>Preço</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for price in prices %}
+                            <tr>
+                                <td>{{ price.timestamp|date:"d/m/Y H:i" }}</td>
+                                <td class="{% if price.price > asset.tunnel_upper_limit %}text-danger{% elif price.price < asset.tunnel_lower_limit %}text-success{% endif %}">
+                                    R$ {{ price.price }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('priceChart').getContext('2d');
+    
+    const prices = [
+        {% for price in prices reversed %}
+            {{ price.price }},
+        {% endfor %}
+    ];
+    
+    const labels = [
+        {% for price in prices reversed %}
+            '{{ price.timestamp|date:"d/m H:i" }}',
+        {% endfor %}
+    ];
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Preço',
+                data: prices,
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1
+            },
+            {
+                label: 'Limite Superior',
+                data: Array(labels.length).fill({{ asset.tunnel_upper_limit }}),
+                borderColor: 'rgba(255, 99, 132, 0.5)',
+                borderDash: [5, 5],
+                fill: false
+            },
+            {
+                label: 'Limite Inferior',
+                data: Array(labels.length).fill({{ asset.tunnel_lower_limit }}),
+                borderColor: 'rgba(75, 192, 192, 0.5)',
+                borderDash: [5, 5],
+                fill: false
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: false
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %} 
