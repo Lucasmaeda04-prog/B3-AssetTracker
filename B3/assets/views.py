@@ -10,9 +10,8 @@ class AssetListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Adiciona os últimos preços para cada ativo
         for asset in context['assets']:
-            asset.last_price = asset.prices.first()
+            asset.last_price = asset.precos.first()
         return context
 
 class AssetDetailView(DetailView):
@@ -23,5 +22,5 @@ class AssetDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         asset = self.get_object()
-        context['prices'] = asset.prices.all()[:30]  # Últimos 30 registros
+        context['prices'] = asset.precos.all()[:30]  
         return context 

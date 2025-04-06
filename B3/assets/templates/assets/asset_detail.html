@@ -3,7 +3,7 @@
 {% block content %}
 <div class="row mb-4">
     <div class="col">
-        <h1>{{ asset.symbol }} - {{ asset.name }}</h1>
+        <h1>{{ asset.sigla }} - {{ asset.nome }}</h1>
     </div>
     <div class="col text-end">
         <a href="{% url 'admin:assets_asset_change' asset.pk %}" class="btn btn-primary">Editar</a>
@@ -15,7 +15,9 @@
         <div class="card mb-4">
             <div class="card-body">
                 <h5 class="card-title">Histórico de Preços</h5>
-                <canvas id="priceChart"></canvas>
+                <div style="position: relative; height: 400px;">
+                    <canvas id="priceChart"></canvas>
+                </div>
             </div>
         </div>
     </div>
@@ -24,9 +26,9 @@
         <div class="card mb-4">
             <div class="card-body">
                 <h5 class="card-title">Informações do Túnel</h5>
-                <p><strong>Limite Superior:</strong> R$ {{ asset.tunnel_upper_limit }}</p>
-                <p><strong>Limite Inferior:</strong> R$ {{ asset.tunnel_lower_limit }}</p>
-                <p><strong>Intervalo de Checagem:</strong> {{ asset.check_interval }} minutos</p>
+                <p><strong>Limite Superior:</strong> R$ {{ asset.limite_superior }}</p>
+                <p><strong>Limite Inferior:</strong> R$ {{ asset.limite_inferior }}</p>
+                <p><strong>Intervalo de Checagem:</strong> {{ asset.intervalo_checagem }} minutos</p>
             </div>
         </div>
 
@@ -44,10 +46,14 @@
                         <tbody>
                             {% for price in prices %}
                             <tr>
-                                <td>{{ price.timestamp|date:"d/m/Y H:i" }}</td>
-                                <td class="{% if price.price > asset.tunnel_upper_limit %}text-danger{% elif price.price < asset.tunnel_lower_limit %}text-success{% endif %}">
-                                    R$ {{ price.price }}
+                                <td>{{ price.data_hora|date:"d/m/Y H:i" }}</td>
+                                <td class="{% if price.preco > asset.limite_superior %}text-danger{% elif price.preco < asset.limite_inferior %}text-warning{% else %}text-success{% endif %}">
+                                    R$ {{ price.preco }}
                                 </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="2" class="text-center">Nenhum histórico de preço encontrado.</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -63,54 +69,101 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const ctx = document.getElementById('priceChart').getContext('2d');
-    
-    const prices = [
+    const ctx = document.getElementById('priceChart');
+    if (!ctx) {
+        console.error("Elemento canvas 'priceChart' não encontrado.");
+        return;
+    }
+    const chartCtx = ctx.getContext('2d');
+    if (!chartCtx) {
+        console.error("Não foi possível obter o contexto 2D do canvas.");
+        return;
+    }
+
+    {% if prices %}
+    const priceData = [
         {% for price in prices reversed %}
-            {{ price.price }},
-        {% endfor %}
-    ];
-    
-    const labels = [
-        {% for price in prices reversed %}
-            '{{ price.timestamp|date:"d/m H:i" }}',
+            {{ price.preco|stringformat:".2f" }},
         {% endfor %}
     ];
 
-    new Chart(ctx, {
+    const labels = [
+        {% for price in prices reversed %}
+            '{{ price.data_hora|date:"d/m H:i" }}',
+        {% endfor %}
+    ];
+
+    const limiteSuperior = {{ asset.limite_superior|stringformat:".2f" }};
+    const limiteInferior = {{ asset.limite_inferior|stringformat:".2f" }};
+
+    const allYValues = [...priceData, limiteSuperior, limiteInferior];
+    const dataMin = Math.min(...allYValues);
+    const dataMax = Math.max(...allYValues);
+    const yPadding = (dataMax - dataMin) * 0.1;
+
+    new Chart(chartCtx, {
         type: 'line',
         data: {
             labels: labels,
-            datasets: [{
+            datasets: [
+            {
                 label: 'Preço',
-                data: prices,
-                borderColor: 'rgb(75, 192, 192)',
-                tension: 0.1
+                data: priceData,
+                borderColor: 'rgb(54, 162, 235)',
+                backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                tension: 0.1,
+                fill: true,
+                pointRadius: 2,
+                pointHoverRadius: 5
             },
             {
                 label: 'Limite Superior',
-                data: Array(labels.length).fill({{ asset.tunnel_upper_limit }}),
-                borderColor: 'rgba(255, 99, 132, 0.5)',
+                data: Array(labels.length).fill(limiteSuperior),
+                borderColor: 'rgba(255, 99, 132, 0.8)',
                 borderDash: [5, 5],
-                fill: false
+                fill: false,
+                pointRadius: 0
             },
             {
                 label: 'Limite Inferior',
-                data: Array(labels.length).fill({{ asset.tunnel_lower_limit }}),
-                borderColor: 'rgba(75, 192, 192, 0.5)',
+                data: Array(labels.length).fill(limiteInferior),
+                borderColor: 'rgba(255, 205, 86, 0.8)',
                 borderDash: [5, 5],
-                fill: false
+                fill: false,
+                pointRadius: 0
             }]
         },
         options: {
             responsive: true,
             scales: {
                 y: {
-                    beginAtZero: false
+                    beginAtZero: false,
+                    suggestedMin: dataMin - yPadding,
+                    suggestedMax: dataMax + yPadding
+                },
+                x: {
+                    ticks: {
+                        maxTicksLimit: 15
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    mode: 'index',
+                    intersect: false
+                },
+                legend: {
+                    position: 'top',
                 }
             }
         }
     });
+    {% else %}
+    chartCtx.font = "16px Arial";
+    chartCtx.fillStyle = "#888";
+    chartCtx.textAlign = "center";
+    chartCtx.fillText("Sem dados de histórico de preços para exibir.", ctx.canvas.width / 2, ctx.canvas.height / 2);
+    {% endif %}
 });
 </script>
 {% endblock %} 

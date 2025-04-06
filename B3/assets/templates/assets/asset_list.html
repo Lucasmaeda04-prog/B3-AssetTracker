@@ -15,22 +15,26 @@
     <div class="col-md-6 col-lg-4 mb-4">
         <div class="card">
             <div class="card-body">
-                <h5 class="card-title">{{ asset.symbol }}</h5>
-                <h6 class="card-subtitle mb-2 text-muted">{{ asset.name }}</h6>
+                <h5 class="card-title">{{ asset.sigla }}</h5>
+                <h6 class="card-subtitle mb-2 text-muted">{{ asset.nome }}</h6>
                 
                 {% if asset.last_price %}
                 <div class="price-info mt-3">
-                    <p class="h3 {% if asset.last_price.price > asset.tunnel_upper_limit %}text-danger{% elif asset.last_price.price < asset.tunnel_lower_limit %}text-success{% endif %}">
-                        R$ {{ asset.last_price.price }}
+                    <p class="h3 {% if asset.last_price.preco > asset.limite_superior %}text-danger{% elif asset.last_price.preco < asset.limite_inferior %}text-warning{% else %}text-success{% endif %}">
+                        R$ {{ asset.last_price.preco }}
                     </p>
-                    <small class="text-muted">Última atualização: {{ asset.last_price.timestamp|date:"d/m/Y H:i" }}</small>
+                    <small class="text-muted">Última atualização: {{ asset.last_price.data_hora|date:"d/m/Y H:i" }}</small>
+                </div>
+                {% else %}
+                <div class="price-info mt-3">
+                    <p class="text-muted">Nenhum preço registrado ainda.</p>
                 </div>
                 {% endif %}
 
                 <div class="tunnel-info mt-3">
                     <div class="d-flex justify-content-between">
-                        <span class="text-success">Limite Inferior: R$ {{ asset.tunnel_lower_limit }}</span>
-                        <span class="text-danger">Limite Superior: R$ {{ asset.tunnel_upper_limit }}</span>
+                        <span class="text-success">Limite Inferior: R$ {{ asset.limite_inferior }}</span>
+                        <span class="text-danger">Limite Superior: R$ {{ asset.limite_superior }}</span>
                     </div>
                 </div>
 
