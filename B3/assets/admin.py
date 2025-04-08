@@ -11,10 +11,9 @@ class AssetAdmin(admin.ModelAdmin):
         try:
             obj.save()
         except ValidationError as e:
-            # Adiciona os erros ao formulário para exibição
             for field, errors in e.message_dict.items():
                 form.add_error(field, errors)
-            return  # Não continua o save
+            return 
 
 @admin.register(AssetPrice)
 class AssetPriceAdmin(admin.ModelAdmin):

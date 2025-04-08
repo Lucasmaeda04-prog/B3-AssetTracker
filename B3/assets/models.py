@@ -3,12 +3,20 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 import yfinance as yf
 import logging
+from django.core.validators import validate_email
 
 logger = logging.getLogger(__name__)
 
 class Asset(models.Model):
     sigla = models.CharField("Sigla", max_length=10, unique=True, null=True)
     nome = models.CharField("Nome", max_length=100, null=True)
+    email_alerta = models.EmailField(
+        "Email para Alertas", 
+        max_length=254, 
+        help_text="Email que receberá os alertas de preço",
+        null=True,
+        blank=True
+    )
     limite_superior = models.DecimalField("Limite Superior", max_digits=10, decimal_places=2, default=100)
     limite_inferior = models.DecimalField("Limite Inferior", max_digits=10, decimal_places=2, default=0)
     intervalo_checagem = models.IntegerField("Intervalo de Checagem", help_text="Intervalo de checagem em minutos", default=5)
@@ -31,6 +39,14 @@ class Asset(models.Model):
             current_price = ticker.fast_info['last_price']
         except Exception as e:
             raise ValidationError({'sigla': f"Erro ao verificar ativo '{self.sigla}'. Verifique se a sigla está correta."})
+
+        if self.email_alerta:
+            try:
+                validate_email(self.email_alerta)
+            except ValidationError:
+                raise ValidationError({
+                    'email_alerta': "Por favor, insira um endereço de email válido."
+                })
 
     def save(self, *args, **kwargs):
         self.full_clean()
