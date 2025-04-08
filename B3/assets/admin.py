@@ -1,7 +1,6 @@
 from django.contrib import admin
 from django.core.exceptions import ValidationError
 from .models import Asset, AssetPrice
-from django.contrib import messages
 
 @admin.register(Asset)
 class AssetAdmin(admin.ModelAdmin):
@@ -11,19 +10,11 @@ class AssetAdmin(admin.ModelAdmin):
     def save_model(self, request, obj, form, change):
         try:
             obj.save()
-            messages.success(request, f"Ativo {obj.sigla} salvo com sucesso!")
         except ValidationError as e:
+            # Adiciona os erros ao formulário para exibição
             for field, errors in e.message_dict.items():
-                if isinstance(errors, list):
-                    for error in errors:
-                        form.add_error(field, error)
-                else:
-                    form.add_error(field, errors)
-            messages.error(request, f"Erro ao salvar ativo: {e}")
-            return False
-        except Exception as e:
-            messages.error(request, f"Erro inesperado: {str(e)}")
-            return False
+                form.add_error(field, errors)
+            return  # Não continua o save
 
 @admin.register(AssetPrice)
 class AssetPriceAdmin(admin.ModelAdmin):

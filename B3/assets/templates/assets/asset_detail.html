@@ -138,7 +138,7 @@ document.addEventListener('DOMContentLoaded', function() {
             scales: {
                 y: {
                     beginAtZero: false,
-                    suggestedMin: dataMin - yPadding,
+                    suggestedMin: Math.max(0, dataMin - yPadding),
                     suggestedMax: dataMax + yPadding
                 },
                 x: {
