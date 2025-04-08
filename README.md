@@ -45,10 +45,9 @@ Para usar o Gmail para envio de emails, siga estes passos:
 2. Vá em Gerenciar sua Conta Google
 3. Na seção "Segurança":
    - Ative a "Verificação em duas etapas"
-   - Depois de ativada, vá em "Senhas de app"
-   - Selecione "App: Outro (nome personalizado)"
+   - Depois de ativada, vá em "Senhas de app" - https://myaccount.google.com/apppasswords
    - Digite um nome (ex: "B3Monitor")
-   - Clique em "Gerar"
+   - Clique em Criar
 4. Copie a senha gerada (16 caracteres) e cole no arquivo `.env` no campo `EMAIL_HOST_PASSWORD`
 5. Coloque seu email Gmail no campo `EMAIL_HOST_USER`
 
@@ -56,21 +55,26 @@ Para usar o Gmail para envio de emails, siga estes passos:
 
 1. Construa e inicie os containers
 ```bash
-docker compose up --build
+docker compose up --build -d
 ```
 
 O sistema estará disponível em `http://localhost:8000`
 
 ## Configuração Inicial
 
-### 1. Criar um Superusuário
+### 1. Rodar as migrations
 
-Em um novo terminal, com os containers rodando, execute:
-
+Rode no terminal:
 ```bash
 # Acesse o container da aplicação
 docker compose exec web bash
+# Executar migrações
+python manage.py migrate
+```
+### 2. Criar um Superusuário
 
+No mesmo terminal rode:
+```bash
 # Crie um superusuário
 python manage.py createsuperuser
 ```
@@ -80,12 +84,12 @@ Siga as instruções para criar seu usuário administrativo:
 - Digite sua senha
 - Confirme sua senha
 
-### 2. Acessar o Sistema
+### 3. Acessar o Sistema
 
 1. Acesse `http://localhost:8000/admin`
 2. Faça login com as credenciais do superusuário criado
 
-### 3. Cadastrar um Ativo
+### 4. Cadastrar um Ativo
 
 1. No painel administrativo, clique em "Ativos"
 2. Clique no botão "ADICIONAR ATIVO"

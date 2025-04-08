@@ -14,5 +14,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copiar o resto do projeto
 COPY . .
 
+# Adicionar o diretório atual ao PYTHONPATH
+ENV PYTHONPATH=/app:$PYTHONPATH
+
 EXPOSE 8000
 
