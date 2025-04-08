@@ -1,5 +1,11 @@
 from django.db import models
 from django.utils import timezone
+from django.core.exceptions import ValidationError
+import yfinance as yf
+import logging
+
+logger = logging.getLogger(__name__)
+
 class Asset(models.Model):
     sigla = models.CharField("Sigla", max_length=10, unique=True, null=True)
     nome = models.CharField("Nome", max_length=100, null=True)
@@ -15,6 +21,20 @@ class Asset(models.Model):
     class Meta:
         verbose_name = "Ativo"
         verbose_name_plural = "Ativos"
+
+    def clean(self):
+        if not self.sigla:
+            raise ValidationError({'sigla': "A sigla do ativo é obrigatória."})
+        
+        try:
+            ticker = yf.Ticker(f"{self.sigla}.SA")
+            current_price = ticker.fast_info['last_price']
+        except Exception as e:
+            raise ValidationError({'sigla': f"Erro ao verificar ativo '{self.sigla}'. Verifique se a sigla está correta."})
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
 
 class AssetPrice(models.Model):
     ativo = models.ForeignKey(Asset, verbose_name="Ativo", on_delete=models.CASCADE, related_name='precos', null=True)
